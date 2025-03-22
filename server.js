@@ -9,7 +9,7 @@ const app = express();
 passport.use(new GoogleStrategy({
     clientID: '765251081913-rd79np7bjv7gbme988i440k3hkgj.apps.googleusercontent.com',
     clientSecret: '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',
-    callbackURL: 'https://my-booking-app-backend.onrender.com/auth/google/callback' // 稍後更新為 Render URL
+    callbackURL: 'https://my-booking-app-backend.onrender.com/auth/google/callback'
 }, (accessToken, refreshToken, profile, done) => {
     return done(null, { profile, accessToken });
 }));
@@ -29,7 +29,7 @@ app.get('/auth/google/callback', passport.authenticate('google', {
     failureRedirect: '/login'
 }), (req, res) => {
     res.redirect('/booking?token=' + req.user.accessToken);
-}));
+});
 
 // 日歷事件 API
 app.get('/calendar', async (req, res) => {
