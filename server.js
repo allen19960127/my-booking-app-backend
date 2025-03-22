@@ -19,6 +19,20 @@ passport.deserializeUser((obj, done) => done(null, obj));
 
 app.use(passport.initialize());
 
+// 簡單的 /ping 端點，支持 GET 和 HEAD 請求，供 UptimeRobot 監控
+app.get('/ping', (req, res) => {
+    res.status(200).send('OK');
+});
+
+app.head('/ping', (req, res) => {
+    res.status(200).send('OK');
+});
+
+// 處理 /auth/google 的 HEAD 請求，供 UptimeRobot 監控
+app.head('/auth/google', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // 登入路由
 app.get('/auth/google', passport.authenticate('google', {
     scope: ['profile', 'https://www.googleapis.com/auth/calendar.readonly']
@@ -48,6 +62,12 @@ app.get('/calendar', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// 錯誤處理中間件，防止未處理的錯誤導致服務崩潰
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
 });
 
 // 啟動服務器
