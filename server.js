@@ -7,8 +7,8 @@ const app = express();
 
 // 配置 Passport
 passport.use(new GoogleStrategy({
-    clientID: '765251081913-rd79np7bjv7gbme988i440k3hkgj.apps.googleusercontent.com',
-    clientSecret: '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',
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: 'https://my-booking-app-backend.onrender.com/auth/google/callback'
 }, (accessToken, refreshToken, profile, done) => {
     return done(null, { profile, accessToken });
