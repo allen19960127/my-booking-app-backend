@@ -2,8 +2,16 @@ const express = require('express');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { google } = require('googleapis');
+const session = require('express-session'); // 新增 express-session
 
 const app = express();
+
+// 配置 express-session 中間件
+app.use(session({
+    secret: 'your-secret-key', // 替換為一個安全的密鑰
+    resave: false,
+    saveUninitialized: false
+}));
 
 // 配置 Passport
 passport.use(new GoogleStrategy({
@@ -18,6 +26,7 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 app.use(passport.initialize());
+app.use(passport.session()); // 啟用 Passport 會話支持
 
 // 簡單的 /ping 端點，支持 GET 和 HEAD 請求，供 UptimeRobot 監控
 app.get('/ping', (req, res) => {
@@ -39,9 +48,7 @@ app.get('/auth/google', passport.authenticate('google', {
 }));
 
 // 回調路由
-app.get('/auth/google/callback', passport.authenticate('google', {
-    failureRedirect: '/login'
-}), (req, res) => {
+app.get('/auth/google/callback', passport.authenticate('google'), (req, res) => {
     res.redirect('/booking?token=' + req.user.accessToken);
 });
 
@@ -71,4 +78,4 @@ app.use((err, req, res, next) => {
 });
 
 // 啟動服務器
-app.listen(process.env.PORT || 3000, () => console.log('Server running on port ' + (process.env.PORT || 3000)));
+app.listen(process.env.PORT || 10000, () => console.log('Server running on port ' + (process.env.PORT || 10000)));
