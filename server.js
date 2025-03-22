@@ -3,8 +3,16 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { google } = require('googleapis');
 const session = require('express-session');
+const cors = require('cors'); // 新增 cors
 
 const app = express();
+
+// 配置 CORS 中間件
+app.use(cors({
+    origin: 'https://localhost', // 允許來自 https://localhost 的請求
+    methods: ['GET', 'POST'], // 允許的 HTTP 方法
+    allowedHeaders: ['Content-Type', 'Authorization'] // 允許的頭部
+}));
 
 // 配置 express-session 中間件
 app.use(session({
