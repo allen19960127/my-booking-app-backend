@@ -19,6 +19,7 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: 'https://my-booking-app-backend.onrender.com/auth/google/callback'
 }, (accessToken, refreshToken, profile, done) => {
+    console.log('Google OAuth callback - accessToken:', accessToken);
     return done(null, { profile, accessToken });
 }));
 
@@ -49,16 +50,22 @@ app.get('/auth/google', passport.authenticate('google', {
 
 // 回調路由
 app.get('/auth/google/callback', passport.authenticate('google'), (req, res) => {
+    console.log('Handling /auth/google/callback - req.user:', req.user);
+    if (!req.user || !req.user.accessToken) {
+        console.error('No accessToken found in req.user');
+        return res.status(500).send('Authentication failed: No access token');
+    }
     res.redirect('/booking?token=' + req.user.accessToken);
 });
 
-// 新增 /booking 路由，返回 token 給前端應用
+// /booking 路由，返回 token 給前端應用
 app.get('/booking', (req, res) => {
     const token = req.query.token;
+    console.log('Handling /booking - token:', token);
     if (!token) {
+        console.error('Missing token in /booking');
         return res.status(400).send('Missing token');
     }
-    // 返回一個簡單的 HTML 頁面，包含 token，供前端應用處理
     res.send(`
         <!DOCTYPE html>
         <html>
@@ -67,7 +74,7 @@ app.get('/booking', (req, res) => {
         </head>
         <body>
             <script>
-                // 將 token 傳回應用
+                console.log('Redirecting to mybookingapp://booking?token=${token}');
                 window.location.href = 'mybookingapp://booking?token=${token}';
             </script>
         </body>
@@ -77,8 +84,15 @@ app.get('/booking', (req, res) => {
 
 // 日歷事件 API
 app.get('/calendar', async (req, res) => {
+    const token = req.query.token;
+    console.log('Handling /calendar - token:', token);
+    if (!token) {
+        console.error('Missing token in /calendar request');
+        return res.status(400).json({ error: 'Missing token' });
+    }
+
     const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: req.query.token });
+    auth.setCredentials({ access_token: token });
 
     const calendar = google.calendar({ version: 'v3', auth });
     try {
@@ -88,15 +102,18 @@ app.get('/calendar', async (req, res) => {
             singleEvents: true,
             orderBy: 'startTime'
         });
+        console.log('Successfully fetched calendar events:', response.data.items);
         res.json(response.data.items);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error fetching calendar events:', error.message);
+        console.error('Error details:', error);
+        res.status(500).json({ error: error.message, details: error });
     }
 });
 
 // 錯誤處理中間件，防止未處理的錯誤導致服務崩潰
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Error:', err.stack);
     res.status(500).send('Something broke!');
 });
 
